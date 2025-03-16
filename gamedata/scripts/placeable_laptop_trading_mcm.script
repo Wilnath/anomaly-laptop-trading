@@ -1,0 +1,337 @@
+local mcm_trader_max_distance = 100
+local mcm_requires_friendly_base = false
+local mcm_friendly_base_max_distance = 100
+local mcm_disabled_under_emission = true
+local mcm_disabled_under_psistorm = true
+local gc = game.translate_string
+
+function on_game_start()
+    RegisterScriptCallback("npc_on_net_spawn", npc_on_net_spawn)
+    RegisterScriptCallback("npc_on_net_destroy", npc_on_net_destroy)
+	RegisterScriptCallback("on_option_change", on_option_change)
+end
+
+function on_mcm_load()
+	local option = {
+		id = "laptop_trading",
+		sh = true,
+		gr = {
+			{id = "description", type = "desc", text = "ui_mcm_laptop_trading_description"},
+			{id = "trader_max_distance", type = "track", val = 2, def = 200, min = 1, max = 1500, step = 50},
+            {id = "disabled_under_emission", type = "check", val = 1, def = true},
+            {id = "disabled_under_psistorm", type = "check", val = 1, def = true},
+            {id = "friendly_base_check", type = "check", val = 1, def = false, hint = "laptop_trading_friendly_base_check"},
+			{id = "friendly_base_max_distance", type = "track", val = 2, def = 200, min = 1, max = 500, step = 25},
+		}
+	}
+	return option
+end
+
+function on_option_change()
+	if ui_mcm then
+		mcm_trader_max_distance = ui_mcm.get("laptop_trading/trader_max_distance")
+		mcm_requires_friendly_base = ui_mcm.get("laptop_trading/friendly_base_check")
+		mcm_friendly_base_max_distance = ui_mcm.get("laptop_trading/friendly_base_max_distance")
+		mcm_disabled_under_emission = ui_mcm.get("laptop_trading/disabled_under_emission")
+		mcm_disabled_under_psistorm = ui_mcm.get("laptop_trading/disabled_under_psistorm")
+	end
+end
+
+function is_valid_trader_type(type)
+	return type == trader_autoinject.SUPPLIER
+		or type == trader_autoinject.MECHANIC
+		or type == trader_autoinject.BARMAN
+		or type == trader_autoinject.MEDIC
+end
+
+function get_trader_type_string(type)
+	-- NOTE: game probably has a way to translate these automatically
+
+	if type == trader_autoinject.SUPPLIER then
+		return gc("st_laptop_trader_role_supplier")
+	end
+
+	if type == trader_autoinject.MECHANIC then
+		return gc("st_laptop_trader_role_mechanic")
+	end
+
+	if type == trader_autoinject.BARMAN then
+		return gc("st_laptop_trader_role_barman")
+	end
+
+	if type == trader_autoinject.MEDIC then
+		return gc("st_laptop_trader_role_medic")
+	end
+end
+
+laptop_trader_npcs = {}
+function npc_on_net_spawn(npc, se_obj)
+	CreateTimeEvent("laptop_trading_net_spawn_event", se_obj:name(), 0, function(go_npc)
+		if is_valid_trader_type(trader_autoinject.get_trader_type(go_npc)) and go_npc:alive() then
+			laptop_trader_npcs[go_npc:id()] = go_npc
+		end
+		return true
+	end, npc)
+end
+
+function npc_on_net_destroy(npc)
+	laptop_trader_npcs[npc:id()] = nil
+end
+
+function init(obj)
+	obj:bind_object(placeable_laptop_wrapper(obj).binder)
+end
+
+-- Binder
+class "placeable_laptop_wrapper" (bind_hf_base.hf_binder_wrapper)
+
+function placeable_laptop_wrapper:__init(obj) super(obj)
+end
+
+-- UI
+-- These are taken straight from HF, trying to just replicate what they do right now
+local ratio = utils_xml.screen_ratio()
+GUI = nil
+
+class "UILaptopTrading" (CUIScriptWnd)
+function UILaptopTrading:__init() super()
+end
+
+function UILaptopTrading:__finalize()
+	GUI = nil
+end
+
+-- called from LTX
+function start_dialog(obj_id)
+	-- from radio script
+	if (mcm_disabled_under_emission and xr_conditions.surge_started()) 
+			or (mcm_disabled_under_psistorm and psi_storm_manager.is_started()) 
+			or (mcm_requires_friendly_base and not is_within_friendly_base()) then
+		news_manager.send_tip(db.actor, gc("st_laptop_conn_error"), nil, nil, 30000)
+		return
+	end
+
+	if (GUI == nil) then
+		GUI = UILaptopTrading()
+	end
+
+	GUI:TestAndShow(obj_id)
+	--return GUI
+end
+
+function UILaptopTrading:TestAndShow(obj_id)
+    self.obj_id = obj_id
+	self:Init(obj_id)
+	self:ShowDialog(true)
+	Register_UI("UILaptopTrading", "ui_hf_laptop_trading")
+end
+
+function UILaptopTrading:StartTrade(npc_id)
+	local npc = laptop_trader_npcs[npc_id]
+	if npc == nil then
+		-- printf("start trade exited, could not find id " .. tostring(npc_id))
+		return
+	end
+
+	if not npc:alive() then
+		news_manager.send_tip(db.actor, gc("st_laptop_no_response"), nil, nil, 30000)
+		return
+	end
+
+	--[[
+	if not dialogs.is_trade_init_accept(db.actor, npc) then
+		-- printf("is_trade_init_accept failed")
+		return
+	end
+	--]]
+
+	-- so if i fail one mission it's over?
+	local relations_file = ini_file("creatures\\game_relations.ltx")
+	-- neutal [sic]
+	local goodwill_neutral_threshold = relations_file:r_float_ex("game_relations", "attitude_neutal_threshold")
+	-- printf("neutal_thershold: " .. tostring(goodwill_neutral_threshold))
+	if npc:general_goodwill(db.actor) < goodwill_neutral_threshold 
+			or dialogs_mlr.check_debt(db.actor, npc) then
+		news_manager.send_tip(db.actor, gc("st_laptop_trade_denied"), nil, nil, 30000)
+		return
+	end
+
+	-- This rolls an RNG check, and is seemingly only used for normal stalkers.
+	--[[
+	if not dialogs.is_trade_accept(db.actor, npc) then
+		printf("is_trade_accept failed")
+		return
+	end
+	--]] 
+
+	trade_manager.update(npc, false)
+	self:Close()
+	CreateTimeEvent("laptop_trading", "open_trader", 0, function(npc)
+		npc:start_trade(db.actor)
+		return true
+	end, npc)
+end
+
+function npc_within_distance(npc, obj_id)
+	local npc_pos = npc:position()
+
+	local obj = get_object_by_id(obj_id)
+	if obj == nil then
+		-- printf("could not find laptop id calcing npc dist")
+		return false
+	end
+
+	local obj_pos = obj:position()
+	if obj_pos:distance_to(npc_pos) <= mcm_trader_max_distance then
+		return true
+	end
+
+	return false
+end
+
+function UILaptopTrading:Init(obj_id)
+	self.obj_id = obj_id
+	self:SetWndRect(Frect():set(0,0,1024,768))
+	self.wide = (device().width/device().height) > (1024/768 + 0.01)
+	
+	self:SetAutoDelete(true)
+
+	local xml = CScriptXmlInit()
+    xml:ParseFile("ui_furniture_laptop_dialog.xml")
+
+	self.back = xml:InitFrame("background", self)
+
+	self.icon = xml:InitStatic("icon", self.back)
+	self.icon:SetWndSize(vector2():set( self.icon:GetWidth(), self.icon:GetWidth() / ratio ))
+
+    self.btn_close = xml:Init3tButton("btn_close", self.back)
+	self:Register(self.btn_close, "btn_close")
+	self:AddCallback("btn_close", ui_events.BUTTON_CLICKED, self.Close, self)
+
+	local valid_npcs = {}
+	for _, npc in pairs(laptop_trader_npcs) do
+		if npc_within_distance(npc, self.obj_id) then
+			local type_string = get_trader_type_string(trader_autoinject.get_trader_type(npc))
+			local npc_name = type_string .. ": " .. npc:character_name()
+			valid_npcs[npc_name] = npc
+		end
+	end
+
+	local sorted_names = {}
+	for n,_ in pairs(valid_npcs) do 
+		table.insert(sorted_names, n) 
+	end
+	table.sort(sorted_names)
+
+	local sorted_npcs = {}
+	for i,n in ipairs(sorted_names) do
+		sorted_npcs[i] = valid_npcs[n]
+	end
+
+	-- printf("length of sorted npcs is " .. tostring(#sorted_npcs))
+	-- printf("length of sorted names is " .. tostring(#sorted_names))
+
+	--for npc, npc_name in pairs(valid_npcs) do
+	for i=1,#sorted_npcs,1 do
+		local npc = sorted_npcs[i]
+		local npc_name = sorted_names[i]
+
+		local btn = xml:Init3tButton("btn_merchant_base", self.back)
+		local btn_name = "btn_trade_"..npc:id()
+		btn:TextControl():SetText(npc_name)
+
+		local btn_x = btn:GetWndPos(self).x
+		local btn_y = btn:GetWndPos(self).y
+		local btn_height = btn:GetHeight()
+		-- 1/4 of button height is added as spacing
+		local new_height = btn_y + ((i-1)*btn_height) + ((i-1)*btn_height/4)
+		btn:SetWndPos(vector2():set(btn_x, new_height))
+
+		btn.wrapper = self
+		btn.npc_id = npc:id()
+		btn.StartTrade = function()
+			btn.wrapper:StartTrade(btn.npc_id)
+		end
+		self:Register(btn, btn_name)
+		self:AddCallback(btn_name, ui_events.BUTTON_CLICKED, btn.StartTrade, btn)
+	end
+end
+
+function UILaptopTrading:Update()
+	CUIScriptWnd.Update(self)
+end
+
+function UILaptopTrading:OnKeyboard(dik, keyboard_action)
+	local res = CUIScriptWnd.OnKeyboard(self,dik,keyboard_action)
+	if (res == false) then
+		local bind = dik_to_bind(dik)
+		if keyboard_action == ui_events.WINDOW_KEY_PRESSED then
+		
+			if dik == DIK_keys.DIK_ESCAPE then
+				self:Close()
+			end
+
+		end
+	end
+
+	return res
+end
+
+function UILaptopTrading:Close()
+	if (self:IsShown()) then
+		self:HideDialog()
+	end
+	
+	Unregister_UI("UILaptopTrading")
+	GUI = nil
+end
+
+
+-- Credit: Ishmaeel, https://github.com/Ishmaeel/YetAnotherCampfireSaving
+function is_within_friendly_base()
+    local friendly_bases = get_friendly_bases()
+
+    for _, smart in pairs(friendly_bases) do
+        if smart.dist_to_actor < mcm_friendly_base_max_distance then
+		--	if surge_manager and not surge_manager.actor_in_cover() then
+		--		return false
+		--	end
+            return true
+        end
+    end
+
+    return false
+end
+
+
+-- Credit: Ishmaeel, https://github.com/Ishmaeel/YetAnotherCampfireSaving
+-- redefine these for this usecase, technically a bad idea should yacs update but w/e
+bonus_bases = {}
+bonus_bases.pri_monolith = {monolith = true}
+bonus_bases.pri_a18_smart_terrain = {killer = true}
+neutral_bases = true
+
+function get_friendly_bases()
+    local friendly_bases = {}
+    local community = gameplay_disguise.get_default_comm()
+
+    for _, smart in pairs(SIMBOARD.smarts_by_names) do
+        if smart.is_on_actor_level and smart.props.base > 0 then
+            -- Base is considered friendly if it's marked for player's faction or "all"
+            local is_safe = smart.props[community] > 0 or smart.props.all > 0
+
+            -- Some bases are not properly marked for factions in vanilla configs, so we have an override table.
+            is_safe = is_safe or (bonus_bases[smart:name()] and bonus_bases[smart:name()][community])
+
+            -- Optional: Other factions may let you use their bases if you have good relations.
+            is_safe = is_safe or neutral_bases and is_base_neutral(smart, community)
+
+            if is_safe then
+                table.insert(friendly_bases, smart)
+            end
+        end
+    end
+
+    return friendly_bases
+end
+

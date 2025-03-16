@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+    <string id="st_laptop_conn_error">
+		<text>Error establishing secure connection to local area.</text>
+	</string>
+    <string id="st_laptop_no_response">
+		<text>No response.</text>
+	</string>
+    <string id="st_laptop_trade_denied">
+		<text>Trade request denied.</text>
+	</string>
+    <string id="st_laptop_trader_role_supplier">
+		<text>Supplier</text>
+	</string>
+    <string id="st_laptop_trader_role_mechanic">
+		<text>Mechanic</text>
+	</string>
+    <string id="st_laptop_trader_role_barman">
+		<text>Barman</text>
+	</string>
+    <string id="st_laptop_trader_role_medic">
+		<text>Medic</text>
+	</string>
+</string_table>

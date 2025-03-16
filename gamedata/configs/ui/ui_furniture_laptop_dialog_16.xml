@@ -1,0 +1,20 @@
+<w>
+    <background x="326" y="256" width="370" height="265" stretch="1">
+        <texture>ui_inGame2_hint_wnd_main_window</texture>
+    </background>
+
+    <icon x="57" y="40" width="49" height="48" stretch="1">
+        <texture>ui_efp_prop_laptop</texture>
+    </icon>
+
+    <btn_close x="31" y="185" width="101" height="28" check_mode="0" stretch="1">
+        <window_name>button_close</window_name>
+        <text font="letterica18">st_close</text>
+        <texture>ui_button_ordinary</texture>
+    </btn_close>
+
+    <btn_merchant_base x="238" y="40" width="101" height="28" check_mode="0" stretch="1">
+        <window_name>button_merchant_base</window_name>
+        <texture>ui_button_ordinary</texture>
+    </btn_merchant_base>
+</w>

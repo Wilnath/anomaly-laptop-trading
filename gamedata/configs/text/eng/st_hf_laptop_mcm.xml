@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+    <string id="ui_mcm_menu_laptop_trading">
+        <text>Laptop Trading</text>
+    </string>
+    <string id="ui_mcm_laptop_trading_description">
+        <text>Allows using the laptop to quickly trade with nearby traders.</text>
+    </string>
+    <string id="ui_mcm_laptop_trading_trader_max_distance">
+        <text>Trader Max Distance</text>
+    </string>
+    <string id="ui_mcm_laptop_trading_trader_max_distance_desc">
+        <text>How far away a trader can be when using the laptop.</text>
+    </string>
+    <string id="ui_mcm_laptop_trading_disabled_under_emission">
+        <text>Disabled under Emission</text>
+    </string>
+    <string id="ui_mcm_laptop_trading_disabled_under_emission_desc">
+        <text>Disables using the laptop to trade during emissions.</text>
+    </string>
+    <string id="ui_mcm_laptop_trading_disabled_under_psistorm">
+        <text>Disabled under Psistorm</text>
+    </string>
+    <string id="ui_mcm_laptop_trading_disabled_under_psistorm_desc">
+        <text>Disables using the laptop to trade during psi-storms.</text>
+    </string>
+    <string id="ui_mcm_laptop_trading_friendly_base_check">
+        <text>Friendly Base Check</text>
+    </string>
+    <string id="ui_mcm_laptop_trading_friendly_base_check_desc">
+		<text>Requires the player to be in a radius around a friendly base in order to use the laptop.</text>
+    </string>
+    <string id="ui_mcm_laptop_trading_friendly_base_max_distance">
+        <text>Friendly Base Max Distance</text>
+    </string>
+    <string id="ui_mcm_laptop_trading_friendly_base_max_distance_desc">
+        <text>How far the player can be from a friendly base to use the laptop.</text>
+    </string>
+</string_table>

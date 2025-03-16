@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+    <string id="st_pickup">
+		<text>Pick up</text>
+	</string>
+    <string id="st_close">
+		<text>Close</text>
+	</string>
+	<string id="st_trader">
+		<text>Test1</text>
+	</string>
+	<string id="st_mechanic">
+		<text>Test2</text>
+	</string>
+</string_table>
