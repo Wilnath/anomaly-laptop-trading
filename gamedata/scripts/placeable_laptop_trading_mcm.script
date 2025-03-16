@@ -6,9 +6,9 @@ local mcm_disabled_under_psistorm = true
 local gc = game.translate_string
 
 function on_game_start()
-    RegisterScriptCallback("npc_on_net_spawn", npc_on_net_spawn)
-    RegisterScriptCallback("npc_on_net_destroy", npc_on_net_destroy)
-	RegisterScriptCallback("on_option_change", on_option_change)
+	    RegisterScriptCallback("npc_on_net_spawn", npc_on_net_spawn)
+	    RegisterScriptCallback("npc_on_net_destroy", npc_on_net_destroy)
+	    RegisterScriptCallback("on_option_change", on_option_change)
 end
 
 function on_mcm_load()
@@ -120,7 +120,7 @@ function start_dialog(obj_id)
 end
 
 function UILaptopTrading:TestAndShow(obj_id)
-    self.obj_id = obj_id
+	self.obj_id = obj_id
 	self:Init(obj_id)
 	self:ShowDialog(true)
 	Register_UI("UILaptopTrading", "ui_hf_laptop_trading")
@@ -197,14 +197,14 @@ function UILaptopTrading:Init(obj_id)
 	self:SetAutoDelete(true)
 
 	local xml = CScriptXmlInit()
-    xml:ParseFile("ui_furniture_laptop_dialog.xml")
+	xml:ParseFile("ui_furniture_laptop_dialog.xml")
 
 	self.back = xml:InitFrame("background", self)
 
 	self.icon = xml:InitStatic("icon", self.back)
 	self.icon:SetWndSize(vector2():set( self.icon:GetWidth(), self.icon:GetWidth() / ratio ))
 
-    self.btn_close = xml:Init3tButton("btn_close", self.back)
+	self.btn_close = xml:Init3tButton("btn_close", self.back)
 	self:Register(self.btn_close, "btn_close")
 	self:AddCallback("btn_close", ui_events.BUTTON_CLICKED, self.Close, self)
 
