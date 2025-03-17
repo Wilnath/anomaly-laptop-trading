@@ -18,9 +18,9 @@ function on_mcm_load()
 		gr = {
 			{id = "description", type = "desc", text = "ui_mcm_laptop_trading_description"},
 			{id = "trader_max_distance", type = "track", val = 2, def = 200, min = 1, max = 1500, step = 50},
-            {id = "disabled_under_emission", type = "check", val = 1, def = true},
-            {id = "disabled_under_psistorm", type = "check", val = 1, def = true},
-            {id = "friendly_base_check", type = "check", val = 1, def = false, hint = "laptop_trading_friendly_base_check"},
+			{id = "disabled_under_emission", type = "check", val = 1, def = true},
+			{id = "disabled_under_psistorm", type = "check", val = 1, def = true},
+			{id = "friendly_base_check", type = "check", val = 1, def = false, hint = "laptop_trading_friendly_base_check"},
 			{id = "friendly_base_max_distance", type = "track", val = 2, def = 200, min = 1, max = 500, step = 25},
 		}
 	}
@@ -145,7 +145,6 @@ function UILaptopTrading:StartTrade(npc_id)
 	end
 	--]]
 
-	-- so if i fail one mission it's over?
 	local relations_file = ini_file("creatures\\game_relations.ltx")
 	-- neutal [sic]
 	local goodwill_neutral_threshold = relations_file:r_float_ex("game_relations", "attitude_neutal_threshold")
@@ -289,18 +288,18 @@ end
 
 -- Credit: Ishmaeel, https://github.com/Ishmaeel/YetAnotherCampfireSaving
 function is_within_friendly_base()
-    local friendly_bases = get_friendly_bases()
+	local friendly_bases = get_friendly_bases()
 
-    for _, smart in pairs(friendly_bases) do
-        if smart.dist_to_actor < mcm_friendly_base_max_distance then
-		--	if surge_manager and not surge_manager.actor_in_cover() then
-		--		return false
-		--	end
-            return true
-        end
-    end
+		for _, smart in pairs(friendly_bases) do
+			if smart.dist_to_actor < mcm_friendly_base_max_distance then
+				--	if surge_manager and not surge_manager.actor_in_cover() then
+				--		return false
+				--	end
+			return true
+		end
+	end
 
-    return false
+	return false
 end
 
 
@@ -312,26 +311,26 @@ bonus_bases.pri_a18_smart_terrain = {killer = true}
 neutral_bases = true
 
 function get_friendly_bases()
-    local friendly_bases = {}
-    local community = gameplay_disguise.get_default_comm()
+	local friendly_bases = {}
+	local community = gameplay_disguise.get_default_comm()
 
-    for _, smart in pairs(SIMBOARD.smarts_by_names) do
-        if smart.is_on_actor_level and smart.props.base > 0 then
-            -- Base is considered friendly if it's marked for player's faction or "all"
-            local is_safe = smart.props[community] > 0 or smart.props.all > 0
+	for _, smart in pairs(SIMBOARD.smarts_by_names) do
+		if smart.is_on_actor_level and smart.props.base > 0 then
+			-- Base is considered friendly if it's marked for player's faction or "all"
+			local is_safe = smart.props[community] > 0 or smart.props.all > 0
 
-            -- Some bases are not properly marked for factions in vanilla configs, so we have an override table.
-            is_safe = is_safe or (bonus_bases[smart:name()] and bonus_bases[smart:name()][community])
+ 			-- Some bases are not properly marked for factions in vanilla configs, so we have an override table.
+			is_safe = is_safe or (bonus_bases[smart:name()] and bonus_bases[smart:name()][community])
 
-            -- Optional: Other factions may let you use their bases if you have good relations.
-            is_safe = is_safe or neutral_bases and is_base_neutral(smart, community)
+			-- Optional: Other factions may let you use their bases if you have good relations.
+			is_safe = is_safe or neutral_bases and is_base_neutral(smart, community)
 
-            if is_safe then
-                table.insert(friendly_bases, smart)
-            end
-        end
-    end
+			if is_safe then
+				table.insert(friendly_bases, smart)
+			end
+		end
+	end
 
-    return friendly_bases
+	return friendly_bases
 end
 
