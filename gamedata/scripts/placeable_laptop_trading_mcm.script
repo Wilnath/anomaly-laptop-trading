@@ -22,14 +22,20 @@ end
 
 
 function on_game_start()
-	    RegisterScriptCallback("npc_on_net_spawn", npc_on_net_spawn)
-	    RegisterScriptCallback("npc_on_net_destroy", npc_on_net_destroy)
-	    RegisterScriptCallback("on_option_change", on_option_change)
+		RegisterScriptCallback("actor_on_first_update", actor_on_first_update)
+		RegisterScriptCallback("npc_on_net_spawn", npc_on_net_spawn)
+		RegisterScriptCallback("npc_on_net_destroy", npc_on_net_destroy)
+		RegisterScriptCallback("on_option_change", on_option_change)
 		RegisterScriptCallback("ActorMenu_on_trade_closed", ActorMenu_on_trade_closed)
 end
 
 function ActorMenu_on_trade_closed()
 	currently_traded_npc = nil
+end
+
+function actor_on_first_update()
+	-- set settings on first launch
+	on_option_change()
 end
 
 function on_mcm_load()
@@ -214,7 +220,7 @@ function UILaptopTrading:Init(obj_id)
 	self.obj_id = obj_id
 	self:SetWndRect(Frect():set(0,0,1024,768))
 	self.wide = (device().width/device().height) > (1024/768 + 0.01)
-	
+
 	self:SetAutoDelete(true)
 
 	local xml = CScriptXmlInit()
