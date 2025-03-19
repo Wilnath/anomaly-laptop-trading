@@ -5,10 +5,31 @@ local mcm_disabled_under_emission = true
 local mcm_disabled_under_psistorm = true
 local gc = game.translate_string
 
+-- 2025-03-19: Some scripts depend on mob_trade.GetTalkingNpc() for their trade changes to function properly
+-- so therefore we monkey patch that to return correct data
+-- I don't 100% like this solution as it implies there's some "talking" step that would be good to do on this side
+-- instead of just making this one function return correctly, but we'll see if that ends up being an issue ever again
+currently_traded_npc = nil
+
+base_mob_trade_GetTalkingNpc = mob_trade.GetTalkingNpc
+function mob_trade.GetTalkingNpc()
+	if currently_traded_npc ~= nil then
+		return currently_traded_npc
+	end
+	
+	return base_mob_trade_GetTalkingNpc()
+end
+
+
 function on_game_start()
 	    RegisterScriptCallback("npc_on_net_spawn", npc_on_net_spawn)
 	    RegisterScriptCallback("npc_on_net_destroy", npc_on_net_destroy)
 	    RegisterScriptCallback("on_option_change", on_option_change)
+		RegisterScriptCallback("ActorMenu_on_trade_closed", ActorMenu_on_trade_closed)
+end
+
+function ActorMenu_on_trade_closed()
+	currently_traded_npc = nil
 end
 
 function on_mcm_load()
@@ -165,6 +186,7 @@ function UILaptopTrading:StartTrade(npc_id)
 
 	trade_manager.update(npc, false)
 	self:Close()
+	currently_traded_npc = npc
 	CreateTimeEvent("laptop_trading", "open_trader", 0, function(npc)
 		npc:start_trade(db.actor)
 		return true
