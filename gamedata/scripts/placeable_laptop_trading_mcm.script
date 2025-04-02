@@ -16,17 +16,16 @@ function mob_trade.GetTalkingNpc()
 	if currently_traded_npc ~= nil then
 		return currently_traded_npc
 	end
-	
+
 	return base_mob_trade_GetTalkingNpc()
 end
 
-
 function on_game_start()
-		RegisterScriptCallback("actor_on_first_update", actor_on_first_update)
-		RegisterScriptCallback("npc_on_net_spawn", npc_on_net_spawn)
-		RegisterScriptCallback("npc_on_net_destroy", npc_on_net_destroy)
-		RegisterScriptCallback("on_option_change", on_option_change)
-		RegisterScriptCallback("ActorMenu_on_trade_closed", ActorMenu_on_trade_closed)
+	RegisterScriptCallback("actor_on_first_update", actor_on_first_update)
+	RegisterScriptCallback("npc_on_net_spawn", npc_on_net_spawn)
+	RegisterScriptCallback("npc_on_net_destroy", npc_on_net_destroy)
+	RegisterScriptCallback("on_option_change", on_option_change)
+	RegisterScriptCallback("ActorMenu_on_trade_closed", ActorMenu_on_trade_closed)
 end
 
 function ActorMenu_on_trade_closed()
@@ -121,6 +120,7 @@ local ratio = utils_xml.screen_ratio()
 GUI = nil
 
 class "UILaptopTrading" (CUIScriptWnd)
+
 function UILaptopTrading:__init() super()
 end
 
@@ -131,10 +131,15 @@ end
 -- called from LTX
 function start_dialog(obj_id)
 	-- from radio script
-	if (mcm_disabled_under_emission and xr_conditions.surge_started()) 
-			or (mcm_disabled_under_psistorm and psi_storm_manager.is_started()) 
+	if (mcm_disabled_under_emission and xr_conditions.surge_started())
+			or (mcm_disabled_under_psistorm and psi_storm_manager.is_started())
 			or (mcm_requires_friendly_base and not is_within_friendly_base()) then
 		news_manager.send_tip(db.actor, gc("st_laptop_conn_error"), nil, nil, 30000)
+		return
+	end
+
+	if gameplay_disguise.is_actor_disguised() then
+		news_manager.send_tip(db.actor, gc("st_laptop_disguise_error"), nil, nil, 30000)
 		return
 	end
 
@@ -154,14 +159,20 @@ function UILaptopTrading:TestAndShow(obj_id)
 end
 
 function UILaptopTrading:StartTrade(npc_id)
-	local npc = laptop_trader_npcs[npc_id]
+	local npc = get_object_by_id(npc_id)
 	if npc == nil then
-		-- printf("start trade exited, could not find id " .. tostring(npc_id))
+		printf("start trade exited, could not find id " .. tostring(npc_id))
 		return
 	end
 
 	if not npc:alive() then
 		news_manager.send_tip(db.actor, gc("st_laptop_no_response"), nil, nil, 30000)
+		return
+	end
+
+	-- repeating here juuuuuuuuuuuuuuuuuuuuust in case
+	if gameplay_disguise.is_actor_disguised() then
+		news_manager.send_tip(db.actor, gc("st_laptop_disguise_error"), nil, nil, 30000)
 		return
 	end
 
@@ -216,6 +227,18 @@ function npc_within_distance(npc, obj_id)
 	return false
 end
 
+local SIDOROVICH_STORY_ID = "esc_m_trader"
+function get_sidorovich_if_valid()
+	local sid_id = get_story_object_id(SIDOROVICH_STORY_ID)
+	printf("sid_id: " .. tostring(sid_id))
+
+	if sid_id == nil then
+		return
+	end
+
+	return get_object_by_id(sid_id)
+end
+
 function UILaptopTrading:Init(obj_id)
 	self.obj_id = obj_id
 	self:SetWndRect(Frect():set(0,0,1024,768))
@@ -244,9 +267,19 @@ function UILaptopTrading:Init(obj_id)
 		end
 	end
 
+	-- sid is a piece of furniture or something, so a special case is introduced
+	local sid = get_sidorovich_if_valid()
+	if sid ~= nil then
+		if npc_within_distance(sid, self.obj_id) then
+			local type_string = get_trader_type_string(trader_autoinject.get_trader_type(sid))
+			local npc_name = type_string .. ": " .. sid:character_name()
+			valid_npcs[npc_name] = sid
+		end
+	end
+
 	local sorted_names = {}
-	for n,_ in pairs(valid_npcs) do 
-		table.insert(sorted_names, n) 
+	for n,_ in pairs(valid_npcs) do
+		table.insert(sorted_names, n)
 	end
 	table.sort(sorted_names)
 

@@ -3,6 +3,9 @@
     <string id="st_laptop_conn_error">
 		<text>Error establishing secure connection to local area.</text>
 	</string>
+    <string id="st_laptop_disguise_error">
+		<text>Error establishing identity, potential disguise</text>
+	</string>
     <string id="st_laptop_no_response">
 		<text>No response.</text>
 	</string>
