@@ -1,5 +1,6 @@
-Allows you to use the hideout laptop to trade nearby traders.
+## Anomaly Laptop Trading
+Allows you to use the hideout laptop to trade nearby traders.  
 
-Additional Credits:
-ImSoHM02 (blackthenwhite@Discord)
+### Additional Credits:  
+ImSoHM02 (blackthenwhite@Discord)  
 Ishmaeel

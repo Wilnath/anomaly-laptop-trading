@@ -43,11 +43,11 @@ function on_mcm_load()
 		sh = true,
 		gr = {
 			{id = "description", type = "desc", text = "ui_mcm_laptop_trading_description"},
-			{id = "trader_max_distance", type = "track", val = 2, def = 200, min = 1, max = 1500, step = 50},
+			{id = "trader_max_distance", type = "track", val = 2, def = 200, min = 0, max = 1500, step = 50},
 			{id = "disabled_under_emission", type = "check", val = 1, def = true},
 			{id = "disabled_under_psistorm", type = "check", val = 1, def = true},
 			{id = "friendly_base_check", type = "check", val = 1, def = false, hint = "laptop_trading_friendly_base_check"},
-			{id = "friendly_base_max_distance", type = "track", val = 2, def = 200, min = 1, max = 500, step = 25},
+			{id = "friendly_base_max_distance", type = "track", val = 2, def = 200, min = 0, max = 500, step = 25},
 		}
 	}
 	return option
