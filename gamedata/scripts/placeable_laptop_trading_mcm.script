@@ -247,7 +247,8 @@ function UILaptopTrading:Init(obj_id)
 	self:SetAutoDelete(true)
 
 	local xml = CScriptXmlInit()
-	xml:ParseFile("ui_furniture_laptop_dialog.xml")
+	-- Load the 16:9 version of the UI XML
+	xml:ParseFile("ui_furniture_laptop_dialog_16.xml")
 
 	self.back = xml:InitFrame("background", self)
 
@@ -257,6 +258,9 @@ function UILaptopTrading:Init(obj_id)
 	self.btn_close = xml:Init3tButton("btn_close", self.back)
 	self:Register(self.btn_close, "btn_close")
 	self:AddCallback("btn_close", ui_events.BUTTON_CLICKED, self.Close, self)
+
+	-- Store original background height for calculations
+	local original_bg_height = self.back:GetHeight()
 
 	local valid_npcs = {}
 	for _, npc in pairs(laptop_trader_npcs) do
@@ -292,20 +296,32 @@ function UILaptopTrading:Init(obj_id)
 	-- printf("length of sorted names is " .. tostring(#sorted_names))
 
 	--for npc, npc_name in pairs(valid_npcs) do
+	local last_button_y = 0
+	local btn_y = 0 -- Will be set by the first button
+	local btn_height = 0 -- Will be set by the first button
+	local spacing = 0 -- Will be set by the first button
+
 	for i=1,#sorted_npcs,1 do
 		local npc = sorted_npcs[i]
 		local npc_name = sorted_names[i]
 
+		-- Create button instance relative to the background
 		local btn = xml:Init3tButton("btn_merchant_base", self.back)
-		local btn_name = "btn_trade_"..npc:id()
+		local btn_name = "btn_trade_" .. npc:id()
 		btn:TextControl():SetText(npc_name)
 
-		local btn_x = btn:GetWndPos(self).x
-		local btn_y = btn:GetWndPos(self).y
-		local btn_height = btn:GetHeight()
-		-- 1/4 of button height is added as spacing
-		local new_height = btn_y + ((i-1)*btn_height) + ((i-1)*btn_height/4)
-		btn:SetWndPos(vector2():set(btn_x, new_height))
+		-- Get geometry from the first button created
+		if i == 1 then
+			btn_y = btn:GetWndPos().y
+			btn_height = btn:GetHeight()
+			spacing = btn_height / 4 -- Use the original spacing logic
+		end
+
+		-- Calculate vertical position
+		local new_y = btn_y + ((i-1) * btn_height) + ((i-1) * spacing)
+		local btn_x = btn:GetWndPos().x -- Keep original X
+		btn:SetWndPos(vector2():set(btn_x, new_y))
+		last_button_y = new_y -- Store the Y of the last button
 
 		btn.wrapper = self
 		btn.npc_id = npc:id()
@@ -315,6 +331,27 @@ function UILaptopTrading:Init(obj_id)
 		self:Register(btn, btn_name)
 		self:AddCallback(btn_name, ui_events.BUTTON_CLICKED, btn.StartTrade, btn)
 	end
+
+	-- Calculate required height and resize background
+	local total_button_area_height = 0
+	if #sorted_npcs > 0 then
+		-- Height from top of first button to bottom of last button
+		total_button_area_height = (last_button_y - btn_y) + btn_height
+	end
+
+	local top_padding = btn_y -- Space above the first button
+	local bottom_padding = 80 -- Fixed space below button area for close button etc.
+	local new_bg_height = top_padding + total_button_area_height + bottom_padding
+	local final_bg_height = math.max(original_bg_height, new_bg_height)
+
+	self.back:SetHeight(final_bg_height)
+
+	-- Reposition close button near the new bottom
+	local new_close_y = final_bg_height - bottom_padding -- Position it roughly where the bottom padding starts
+	local close_pos = self.btn_close:GetWndPos()
+	close_pos.y = new_close_y
+	self.btn_close:SetWndPos(close_pos)
+
 end
 
 function UILaptopTrading:Update()
