@@ -88,6 +88,8 @@ function get_trader_type_string(type)
 	if type == trader_autoinject.MEDIC then
 		return gc("st_laptop_trader_role_medic")
 	end
+
+	return gc("st_laptop_trader_role_supplier")
 end
 
 laptop_trader_npcs = {}
@@ -393,5 +395,21 @@ function get_friendly_bases()
 	end
 
 	return friendly_bases
+end
+
+
+-- Credit: Ishmaeel, https://github.com/Ishmaeel/YetAnotherCampfireSaving
+function is_base_neutral(smart, community)
+    for _, faction in pairs(game_relations.factions_table) do
+        local influence = smart.props[faction]
+        if influence > 0 then
+            local relation = relation_registry.community_relation(faction, community)
+            local goodwill = relation_registry.community_goodwill(faction, db.actor:id())
+            if relation + goodwill >= 0 then
+                return true
+            end
+        end
+    end
+    return false
 end
 
